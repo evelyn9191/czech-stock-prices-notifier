@@ -1,0 +1,4 @@
+beautifulsoup4
+lxml; sys_platform == "win32"
+requests
+win10toast
