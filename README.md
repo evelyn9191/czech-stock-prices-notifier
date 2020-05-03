@@ -8,3 +8,6 @@ The user should set up:
 * whether to send notification for all the stocks or only those that hit the target price.
 
 Script can then be run using the Windows Task Scheduler.
+
+### Notification Example
+![notification_example](notification_example.png)
