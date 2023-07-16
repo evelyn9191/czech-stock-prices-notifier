@@ -9,11 +9,11 @@ from win10toast import ToastNotifier
 from user_agents import CHROME_USER_AGENTS
 
 STOCK_TARGETS = {
-    "?EZ": {"purchase_price": 399, "target_price": 540},
+    "ČEZ, A.S.": {"purchase_price": 399, "target_price": 540},
     "ERSTE GROUP BANK AG": {"purchase_price": 554, "target_price": 800},
-    "KOMER?NÍ BANKA": {"purchase_price": 507, "target_price": 800},
+    "KOMERČNÍ BANKA": {"purchase_price": 507, "target_price": 800},
     "MONETA MONEY BANK": {"purchase_price": 55.25, "target_price": 80},
-    "STOCK SPIRITS GROUP": {"purchase_price": 49.50, "target_price": 70},
+    "PHILIP MORRIS ČR": {"purchase_price": 13400, "target_price": 15000},
     "VIG": {"purchase_price": 445, "target_price": 600},
   }
 CHECK_IF_TARGET_HIT = False
@@ -33,8 +33,8 @@ def get_stocks_prices(stocks_items: ResultSet) -> List[tuple]:
     for stock_item in stocks_items[1:]:
         stock_name = stock_item.td.text
         try:
-            target_price = STOCK_TARGETS[stock_name]["target_price"]
-            current_stock_price = stock_item.td.next_sibling.next_sibling.text
+            target_price = "Target " + str(STOCK_TARGETS[stock_name]["target_price"])
+            current_stock_price = "Now " + str(stock_item.td.next_sibling.text)
             stock_pairs.append((stock_name, current_stock_price, target_price))
         except KeyError:
             continue
