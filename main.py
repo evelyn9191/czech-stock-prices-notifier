@@ -1,10 +1,16 @@
 import random
+import sys
 import time
 from typing import List
 
 import requests
 from bs4 import BeautifulSoup, ResultSet
-from win10toast import ToastNotifier
+from prettytable import PrettyTable
+
+try:
+    from win10toast import ToastNotifier
+except ImportError:
+    pass
 
 from user_agents import CHROME_USER_AGENTS
 
@@ -33,9 +39,10 @@ def get_stocks_prices(stocks_items: ResultSet) -> List[tuple]:
     for stock_item in stocks_items[1:]:
         stock_name = stock_item.td.text
         try:
-            target_price = "Target " + str(STOCK_TARGETS[stock_name]["target_price"])
-            current_stock_price = "Now " + str(stock_item.td.next_sibling.text)
-            stock_pairs.append((stock_name, current_stock_price, target_price))
+            target_price = STOCK_TARGETS[stock_name]["target_price"]
+            current_stock_price = stock_item.td.next_sibling.text.replace(",", ".").replace(" ", "")
+            cleaned_current_price = int(float(current_stock_price))
+            stock_pairs.append((stock_name, cleaned_current_price, target_price))
         except KeyError:
             continue
     return stock_pairs
@@ -63,16 +70,27 @@ def filter_watched_stocks(stocks: List[tuple]) -> List[str]:
     for stock_item in stocks:
         name, current_price, target = stock_item
         purchase_price = STOCK_TARGETS[name]["purchase_price"]
-        cleaned_current_price = current_price.replace(",", ".")
         if CHECK_IF_TARGET_HIT is True:
-            if float(cleaned_current_price) / target >= 1:
-                stocks_data.append(f"{name}: {purchase_price}/{cleaned_current_price}/{target}")
+            if current_price / target >= 1:
+                stocks_data.append(f"{name}: {purchase_price}/Now: {current_price}/Target: {target}")
         else:
-            stocks_data.append(f"{name}: {purchase_price}/{cleaned_current_price}/{target}")
+            stocks_data.append(f"{name}: {purchase_price}/Now: {current_price}/Target: {target}")
     return stocks_data
+
+
+def print_pretty_table(watched_stocks: list[tuple]) -> None:
+    table = PrettyTable(['Stock', 'Current Price', 'Target Price'])
+
+    for stock in watched_stocks:
+        table.add_row(stock)
+
+    print(table)
 
 
 if __name__ == "__main__":
     stocks_items = get_rm_system_stocks_items()
     watched_stocks = get_stocks_prices(stocks_items)
-    show_notification(watched_stocks)
+    if sys.platform == 'win32':
+        show_notification(watched_stocks)
+    else:
+        print_pretty_table(watched_stocks)
