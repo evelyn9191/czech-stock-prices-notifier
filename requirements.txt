@@ -1,4 +1,5 @@
 beautifulsoup4
 lxml
+prettytable
 requests
-win10toast
+win10toast; sys_platform == 'windows'
