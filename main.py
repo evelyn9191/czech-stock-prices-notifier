@@ -40,9 +40,11 @@ def get_stocks_prices(stocks_items: ResultSet) -> List[tuple]:
         stock_name = stock_item.td.text
         try:
             target_price = STOCK_TARGETS[stock_name]["target_price"]
+            buying_price = STOCK_TARGETS[stock_name]["purchase_price"]
             current_stock_price = stock_item.td.next_sibling.text.replace(",", ".").replace(" ", "")
             cleaned_current_price = int(float(current_stock_price))
-            stock_pairs.append((stock_name, cleaned_current_price, target_price))
+            gain = round((cleaned_current_price - buying_price) / STOCK_TARGETS[stock_name]["purchase_price"] * 100, 1)
+            stock_pairs.append((stock_name, buying_price, cleaned_current_price, target_price, gain))
         except KeyError:
             continue
     return stock_pairs
@@ -68,21 +70,24 @@ def show_notification(watched_stocks: List[tuple]):
 def filter_watched_stocks(stocks: List[tuple]) -> List[str]:
     stocks_data = []
     for stock_item in stocks:
-        name, current_price, target = stock_item
+        name, _, current_price, target, difference = stock_item
         purchase_price = STOCK_TARGETS[name]["purchase_price"]
         if CHECK_IF_TARGET_HIT is True:
             if current_price / target >= 1:
-                stocks_data.append(f"{name}: {purchase_price}/Now: {current_price}/Target: {target}")
+                stocks_data.append(f"{name}: {purchase_price}/Now: {current_price}/Target: {target}/Gain: {difference}")
         else:
-            stocks_data.append(f"{name}: {purchase_price}/Now: {current_price}/Target: {target}")
+            stocks_data.append(f"{name}: {purchase_price}/Now: {current_price}/Target: {target}/Gain: {difference}")
     return stocks_data
 
 
 def print_pretty_table(watched_stocks: list[tuple]) -> None:
-    table = PrettyTable(['Stock', 'Current Price', 'Target Price'])
+    table = PrettyTable(["Stock", "Buying Price", "Current Price", "Target Price", "Gain in %", "Target hit"])
 
-    for stock in watched_stocks:
-        table.add_row(stock)
+    for stock_items in watched_stocks:
+        full_info = [stock_info for stock_info in stock_items]
+        hit_target = "Y" if full_info[2] > full_info[3] else "N"
+        full_info.append(hit_target)
+        table.add_row(full_info)
 
     print(table)
 
@@ -90,7 +95,8 @@ def print_pretty_table(watched_stocks: list[tuple]) -> None:
 if __name__ == "__main__":
     stocks_items = get_rm_system_stocks_items()
     watched_stocks = get_stocks_prices(stocks_items)
+
     if sys.platform == 'win32':
         show_notification(watched_stocks)
-    else:
-        print_pretty_table(watched_stocks)
+
+    print_pretty_table(watched_stocks)
