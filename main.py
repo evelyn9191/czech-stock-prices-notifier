@@ -16,11 +16,11 @@ from user_agents import CHROME_USER_AGENTS
 
 STOCK_TARGETS = {
     "ČEZ, A.S.": {"purchase_price": 399, "target_price": 540},
-    "ERSTE GROUP BANK AG": {"purchase_price": 554, "target_price": 800},
-    "KOMERČNÍ BANKA": {"purchase_price": 507, "target_price": 800},
-    "MONETA MONEY BANK": {"purchase_price": 55.25, "target_price": 80},
+    "ERSTE GROUP BANK AG": {"purchase_price": 554, "target_price": 800, "sell_price": 950},
+    "KOMERČNÍ BANKA": {"purchase_price": 507, "target_price": 800, "sell_price": 812},
+    "MONETA MONEY BANK": {"purchase_price": 55.25, "target_price": 80, "sell_price": 100},
     "PHILIP MORRIS ČR": {"purchase_price": 13400, "target_price": 15000},
-    "VIG": {"purchase_price": 445, "target_price": 600},
+    "VIG": {"purchase_price": 445, "target_price": 600, "sell_price": 680},
   }
 CHECK_IF_TARGET_HIT = False
 
@@ -41,10 +41,11 @@ def get_stocks_prices(stocks_items: ResultSet) -> List[tuple]:
         try:
             target_price = STOCK_TARGETS[stock_name]["target_price"]
             buying_price = STOCK_TARGETS[stock_name]["purchase_price"]
+            sell_price = STOCK_TARGETS[stock_name].get("sell_price", "")
             current_stock_price = stock_item.td.next_sibling.text.replace(",", ".").replace(" ", "")
             cleaned_current_price = int(float(current_stock_price))
             gain = round((cleaned_current_price - buying_price) / STOCK_TARGETS[stock_name]["purchase_price"] * 100, 1)
-            stock_pairs.append((stock_name, buying_price, cleaned_current_price, target_price, gain))
+            stock_pairs.append((stock_name, buying_price, cleaned_current_price, target_price, sell_price, gain))
         except KeyError:
             continue
     return stock_pairs
@@ -70,7 +71,7 @@ def show_notification(watched_stocks: List[tuple]):
 def filter_watched_stocks(stocks: List[tuple]) -> List[str]:
     stocks_data = []
     for stock_item in stocks:
-        name, _, current_price, target, difference = stock_item
+        name, _, current_price, target, _, difference = stock_item
         purchase_price = STOCK_TARGETS[name]["purchase_price"]
         if CHECK_IF_TARGET_HIT is True:
             if current_price / target >= 1:
@@ -81,15 +82,21 @@ def filter_watched_stocks(stocks: List[tuple]) -> List[str]:
 
 
 def print_pretty_table(watched_stocks: list[tuple]) -> None:
-    table = PrettyTable(["Stock", "Buying Price", "Current Price", "Target Price", "Gain in %", "Target hit"])
+    table = PrettyTable(["Stock", "Buying Price", "Current Price", "Target Price", "Sell Price", "Gain in %", "Target hit"])
 
     for stock_items in watched_stocks:
         full_info = [stock_info for stock_info in stock_items]
-        hit_target = "Y" if full_info[2] > full_info[3] else "N"
-        full_info.append(hit_target)
+        hit_target_price = hit_target(full_info)
+        full_info.append(hit_target_price)
         table.add_row(full_info)
 
     print(table)
+
+
+def hit_target(full_info: list) -> str:
+    if full_info[4]:
+        return "Y" if full_info[4] >= full_info[3] else "N"
+    return "Y" if full_info[2] > full_info[3] else "N"
 
 
 if __name__ == "__main__":
